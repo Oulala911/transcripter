@@ -1,0 +1,7 @@
+{
+  "name": "Xcribe Transcriber",
+  "description": "Professional AI-transcription powered by OPTRIX, converting audio files into accurate, goal-oriented transcriptions with custom formatting.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
