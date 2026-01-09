@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/genai';
 import { TranscriptionSettings, StructureType } from '../types';
 
 const API_KEY = process.env.GEMINI_API_KEY || '';
@@ -12,27 +11,51 @@ export async function transcribeAudio(
     throw new Error('GEMINI_API_KEY is niet ingesteld');
   }
 
-  const genAI = new GoogleGenerativeAI(API_KEY);
-  const model = genAI.getGenerativeModel({ 
-    model: settings.renderingMode === 'Snelle rendering (Prioriteit: snelheid)' 
-      ? 'gemini-1.5-flash' 
-      : 'gemini-1.5-pro'
-  });
+  const modelName = settings.renderingMode === 'Snelle rendering (Prioriteit: snelheid)' 
+    ? 'gemini-1.5-flash' 
+    : 'gemini-1.5-pro';
 
-  let prompt = buildPrompt(settings);
+  const prompt = buildPrompt(settings);
 
-  const result = await model.generateContent([
+  const requestBody = {
+    contents: [{
+      parts: [
+        {
+          inline_data: {
+            mime_type: mimeType,
+            data: base64Audio
+          }
+        },
+        {
+          text: prompt
+        }
+      ]
+    }]
+  };
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`,
     {
-      inlineData: {
-        data: base64Audio,
-        mimeType: mimeType
-      }
-    },
-    prompt
-  ]);
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    }
+  );
 
-  const response = await result.response;
-  return response.text();
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Gemini API fout: ${error}`);
+  }
+
+  const data = await response.json();
+  
+  if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+    throw new Error('Geen transcriptie ontvangen van Gemini API');
+  }
+
+  return data.candidates[0].content.parts[0].text;
 }
 
 function buildPrompt(settings: TranscriptionSettings): string {
@@ -74,11 +97,4 @@ function buildPrompt(settings: TranscriptionSettings): string {
   // Stijl
   if (settings.outputStyle === 'Professioneel verslag') {
     prompt += 'Gebruik een professionele, zakelijke toon.';
-  } else if (settings.outputStyle === 'Zakelijk / formeel') {
-    prompt += 'Gebruik een formele, zakelijke schrijfstijl.';
-  } else if (settings.outputStyle === 'Informeel / creatief') {
-    prompt += 'Gebruik een informele, toegankelijke stijl.';
-  }
-
-  return prompt;
-}
+  } else if (settings.outputStyl
