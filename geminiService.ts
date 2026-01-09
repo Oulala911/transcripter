@@ -1,4 +1,4 @@
-
+/*
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { TranscriptionSettings, RenderingMode } from "../types";
 
@@ -89,5 +89,5 @@ export const transcribeAudio = async (
   } catch (error) {
     console.error("Transcription Error:", error);
     throw new Error("De transcriptie is mislukt. Controleer of het audiobestand niet te groot is of probeer het later opnieuw.");
-  }
-};
+  } 
+};¨*/
